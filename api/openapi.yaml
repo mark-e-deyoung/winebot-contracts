@@ -1,0 +1,93 @@
+openapi: '3.1.0'
+info:
+  title: WineBot/WinBot Automation API
+  version: '1.0.0'
+  description: Shared API contract for WineBot and WinBot
+servers:
+  - url: http://localhost:8000
+security:
+  - ApiKeyAuth: []
+components:
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-API-Key
+paths:
+  /health:
+    get:
+      operationId: healthCheck
+      tags: [Health]
+  /lifecycle/status:
+    get:
+      operationId: lifecycleStatus
+      tags: [Lifecycle]
+  /sessions:
+    get:
+      operationId: listSessions
+      tags: [Sessions]
+  /recording/start:
+    post:
+      operationId: startRecording
+      tags: [Recording]
+  /recording/stop:
+    post:
+      operationId: stopRecording
+      tags: [Recording]
+  /recording/health:
+    get:
+      operationId: recordingHealth
+      tags: [Recording]
+  /input/mouse/click:
+    post:
+      operationId: mouseClick
+      tags: [Input]
+  /input/key:
+    post:
+      operationId: keyboardInput
+      tags: [Input]
+  /apps/run:
+    post:
+      operationId: runApp
+      tags: [Automation]
+  /screenshot:
+    get:
+      operationId: screenshot
+      tags: [Automation]
+  /windows:
+    get:
+      operationId: listWindows
+      tags: [Automation]
+  /input/trace/start:
+    post:
+      operationId: startTrace
+      tags: [Trace]
+  /input/trace/stop:
+    post:
+      operationId: stopTrace
+      tags: [Trace]
+  /input/trace/status:
+    get:
+      operationId: traceStatus
+      tags: [Trace]
+  /input/events:
+    get:
+      operationId: queryEvents
+      tags: [Trace]
+  /operations:
+    get:
+      operationId: listOperations
+      tags: [Idempotency]
+  /operations/{operation_id}:
+    get:
+      operationId: getOperation
+      tags: [Idempotency]
+tags:
+  - name: Health
+  - name: Lifecycle
+  - name: Sessions
+  - name: Recording
+  - name: Input
+  - name: Automation
+  - name: Trace
+  - name: Idempotency

@@ -1,0 +1,19 @@
+{
+  "server": {"name": "winebot-automation", "version": "1.0.0"},
+  "tools": [
+    {"name": "health_check", "description": "Check runtime health and subsystem status"},
+    {"name": "launch_application", "description": "Launch a Windows application"},
+    {"name": "screenshot", "description": "Capture desktop screenshot (PNG)"},
+    {"name": "list_windows", "description": "List visible windows with titles"},
+    {"name": "click_mouse", "description": "Click at coordinates, optionally targeting a named window"},
+    {"name": "type_text", "description": "Type text or send named keys to a window"},
+    {"name": "analyze_screen", "description": "CV/OCR analysis of current screen (requires sidecar)"},
+    {"name": "wait_for_window", "description": "Wait for a window by title to appear"},
+    {"name": "start_recording", "description": "Start session recording to video"},
+    {"name": "stop_recording", "description": "Stop recording and finalize video"},
+    {"name": "run_command", "description": "Run a command via cmd.exe"},
+    {"name": "query_trace_events", "description": "Query input trace events by layer"},
+    {"name": "session_status", "description": "Get current session ID and state"},
+    {"name": "credential_store", "description": "Store/retrieve credentials via OS keychain"}
+  ]
+}

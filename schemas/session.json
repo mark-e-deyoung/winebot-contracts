@@ -1,0 +1,18 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Session Manifest",
+  "type": "object",
+  "required": ["session_id", "start_time_epoch", "start_time_iso"],
+  "properties": {
+    "session_id": {"type": "string", "pattern": "^session-\\d{4}-\\d{2}-\\d{2}-\\d+-\\w{6}$"},
+    "start_time_epoch": {"type": "number", "description": "Unix epoch milliseconds"},
+    "start_time_iso": {"type": "string", "format": "date-time"},
+    "hostname": {"type": "string"},
+    "display": {"type": "string"},
+    "resolution": {"type": "string", "pattern": "^\\d+x\\d+$"},
+    "fps": {"type": "integer"},
+    "recording_timeline_id": {"type": "string"},
+    "git_sha": {"type": ["string", "null"]},
+    "schema_version": {"type": "string", "const": "1.0"}
+  }
+}

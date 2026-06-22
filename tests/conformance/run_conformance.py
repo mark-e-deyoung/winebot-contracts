@@ -51,6 +51,13 @@ def run():
     test("GET /health", s == 200, f"got {s}")
     test("status field", isinstance(d.get("status"), str))
 
+    print("\n--- Health: System (GPU check) ---")
+    s, d = api("GET", "/health/system")
+    test("GET /health/system", s in (200, 404), f"got {s}")
+    if s == 200:
+        test("gpu_available field present", "gpu_available" in d,
+             "WineBot should report gpu_available:false (Xvfb); WinBot: gpu_available:true (native GPU)")
+
     print("\n--- Lifecycle ---")
     s, d = api("GET", "/lifecycle/status")
     test("GET /lifecycle/status", s == 200)

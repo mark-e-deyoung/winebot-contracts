@@ -1,0 +1,130 @@
+# reusable workflow — run conformance tests against WineBot or WinBot
+#
+# Called by each project's CI pipeline. Stores structured results as
+# a downloadable artifact for historical tracking.
+#
+# Usage (in WineBot or WinBot repo):
+#
+#   jobs:
+#     conformance:
+#       uses: mark-e-deyoung/winebot-contracts/.github/workflows/run-conformance.yaml@main
+#       with:
+#         api-url: 'http://my-vm:8000'
+#         api-token: ${{ secrets.API_TOKEN }}
+#         platform-name: 'winbot'
+
+name: Run Conformance Tests
+
+on:
+  workflow_call:
+    inputs:
+      api-url:
+        required: true
+        type: string
+        description: 'Base URL of the target API'
+      api-token:
+        required: true
+        type: string
+        description: 'API token for authentication'
+      platform-name:
+        required: false
+        type: string
+        default: 'unknown'
+        description: 'Human-readable platform name (winbot / winebot)'
+      results-dir:
+        required: false
+        type: string
+        default: 'results'
+        description: 'Directory to store structured results'
+    outputs:
+      pass-rate:
+        description: 'Percentage of tests passed'
+        value: ${{ jobs.conformance.outputs.pass_rate }}
+      total-tests:
+        description: 'Total tests run'
+        value: ${{ jobs.conformance.outputs.total_tests }}
+      passed-tests:
+        description: 'Tests passed'
+        value: ${{ jobs.conformance.outputs.passed_tests }}
+      failed-tests:
+        description: 'Tests failed'
+        value: ${{ jobs.conformance.outputs.failed_tests }}
+      exit-code:
+        description: 'Exit code from test run (0 = all passed)'
+        value: ${{ jobs.conformance.outputs.exit_code }}
+
+jobs:
+  conformance:
+    name: "Conformance — ${{ inputs.platform-name }}"
+    runs-on: ubuntu-latest
+    outputs:
+      pass_rate: ${{ steps.summary.outputs.pass_rate }}
+      total_tests: ${{ steps.summary.outputs.total_tests }}
+      passed_tests: ${{ steps.summary.outputs.passed_tests }}
+      failed_tests: ${{ steps.summary.outputs.failed_tests }}
+      exit_code: ${{ steps.summary.outputs.exit_code }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install test dependencies
+        run: |
+          pip install -r tests/conformance/requirements.txt
+
+      - name: Run conformance tests
+        id: test-run
+        continue-on-error: true
+        env:
+          API_URL: ${{ inputs.api-url }}
+          API_TOKEN: ${{ inputs.api-token }}
+        run: |
+          RESULTS_FILE="${{ inputs.results-dir }}/${{ inputs.platform-name }}-$(date -u +%Y%m%d-%H%M%S).json"
+          mkdir -p "${{ inputs.results-dir }}"
+          python -m pytest tests/conformance/ \
+            --api-url "${{ inputs.api-url }}" \
+            --api-token "${{ inputs.api-token }}" \
+            --results-file "$RESULTS_FILE" \
+            -v --tb=short \
+            --junit-xml="${{ inputs.results-dir }}/junit-${{ inputs.platform-name }}.xml" \
+            2>&1 | tee conformance-output.txt
+          echo "exit-code=$?" >> $GITHUB_OUTPUT
+
+      - name: Parse results for outputs
+        id: summary
+        run: |
+          # Find the latest results JSON
+          RESULTS_FILE=$(ls -t ${{ inputs.results-dir }}/${{ inputs.platform-name }}-*.json 2>/dev/null | head -1)
+          if [ -n "$RESULTS_FILE" ]; then
+            PASSED=$(python3 -c "import json; d=json.load(open('$RESULTS_FILE')); print(d['summary']['passed'])")
+            FAILED=$(python3 -c "import json; d=json.load(open('$RESULTS_FILE')); print(d['summary']['failed'])")
+            TOTAL=$(python3 -c "import json; d=json.load(open('$RESULTS_FILE')); print(d['summary']['total'])")
+            RATE=$(python3 -c "import json; d=json.load(open('$RESULTS_FILE')); print(d['summary']['pass_rate'])")
+            EC=$(python3 -c "import json; d=json.load(open('$RESULTS_FILE')); print(d['summary']['exit_code'])")
+          else
+            PASSED=0; FAILED=0; TOTAL=0; RATE=0; EC=1
+          fi
+          echo "pass_rate=$RATE" >> $GITHUB_OUTPUT
+          echo "total_tests=$TOTAL" >> $GITHUB_OUTPUT
+          echo "passed_tests=$PASSED" >> $GITHUB_OUTPUT
+          echo "failed_tests=$FAILED" >> $GITHUB_OUTPUT
+          echo "exit_code=$EC" >> $GITHUB_OUTPUT
+          echo "Results: $PASSED/$TOTAL passed ($RATE%)"
+
+      - name: Upload results artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: conformance-results-${{ inputs.platform-name }}-${{ github.run_id }}
+          path: |
+            ${{ inputs.results-dir }}/
+            conformance-output.txt
+
+      - name: Fail on conformance failure
+        if: steps.test-run.outputs.exit-code != '0'
+        run: |
+          echo "❌ Conformance tests failed for ${{ inputs.platform-name }}"
+          echo "This is a release gate — conformance must pass before release."
+          exit 1

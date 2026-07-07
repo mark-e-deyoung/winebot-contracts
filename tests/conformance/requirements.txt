@@ -1,0 +1,4 @@
+pytest>=8.0
+requests>=2.31
+openapi-spec-validator>=0.7
+pyyaml>=6.0

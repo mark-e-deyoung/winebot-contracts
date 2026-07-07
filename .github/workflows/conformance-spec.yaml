@@ -1,0 +1,33 @@
+# Validates the OpenAPI spec itself on every push.
+# Does NOT run conformance tests against a live API (that requires a running
+# WineBot or WinBot instance). See the "conformance-run" workflow for that.
+
+name: Spec Validation
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  validate-openapi:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install deps
+        run: |
+          pip install openapi-spec-validator pyyaml
+      - name: Validate OpenAPI spec
+        run: |
+          python -c "
+import yaml
+from openapi_spec_validator import validate
+with open('api/openapi.yaml') as f:
+    spec = yaml.safe_load(f)
+validate(spec)
+print('OpenAPI spec is valid')
+"

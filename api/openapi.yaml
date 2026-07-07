@@ -2,7 +2,10 @@ openapi: '3.1.0'
 info:
   title: WineBot/WinBot Automation API
   version: '1.0.0'
-  description: Shared API contract for WineBot and WinBot
+  description: >
+    Shared API contract for WineBot (containerized Wine on Linux/Docker) and
+    WinBot (native Windows on Hyper-V). Both implementations MUST implement
+    the canonical paths. Platform-specific extensions are noted.
 servers:
   - url: http://localhost:8000
 security:
@@ -13,81 +16,528 @@ components:
       type: apiKey
       in: header
       name: X-API-Key
+      description: API token for authentication
+
 paths:
+
+  # ============================================================
+  # Health
+  # ============================================================
   /health:
     get:
       operationId: healthCheck
+      summary: Top-level health summary
       tags: [Health]
-  /lifecycle/status:
+      responses:
+        '200':
+          description: Health summary
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    enum: [ok, degraded]
+                  hostname:
+                    type: string
+                  tools:
+                    type: object
+                  storage:
+                    type: object
+
+  /health/system:
     get:
-      operationId: lifecycleStatus
-      tags: [Lifecycle]
+      operationId: systemHealth
+      summary: System resource information (CPU, memory, boot time)
+      tags: [Health]
+      responses:
+        '200':
+          description: System health info
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  cpu_count:
+                    type: integer
+                  memory:
+                    type: object
+                  boot_time:
+                    type: number
+
+  /health/system_info:
+    get:
+      operationId: systemInfo
+      summary: Detailed system information
+      tags: [Health]
+      responses:
+        '200':
+          description: System info
+
+  /health/tools:
+    get:
+      operationId: toolsHealth
+      summary: Installed automation tool status
+      tags: [Health]
+      responses:
+        '200':
+          description: Tool status
+
+  /health/storage:
+    get:
+      operationId: storageHealth
+      summary: Disk space for WinBot/WineBot directories
+      tags: [Health]
+      responses:
+        '200':
+          description: Storage info
+
+  /health/capabilities:
+    get:
+      operationId: capabilities
+      summary: Active capabilities based on installed tools
+      tags: [Health]
+      responses:
+        '200':
+          description: Capabilities report
+
+  /health/presence:
+    get:
+      operationId: humanPresence
+      summary: Check whether a human is logged into the desktop
+      tags: [Health]
+      responses:
+        '200':
+          description: Presence info
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  present:
+                    type: boolean
+                  evidence:
+                    type: array
+                    items:
+                      type: string
+
+  # ============================================================
+  # Sessions
+  # ============================================================
   /sessions:
     get:
       operationId: listSessions
+      summary: List active sessions
       tags: [Sessions]
+      responses:
+        '200':
+          description: Session list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  sessions:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/SessionManifest'
+
+  # ============================================================
+  # Lifecycle
+  # ============================================================
+  /lifecycle/status:
+    get:
+      operationId: lifecycleStatus
+      summary: Check for pending shutdown/restart
+      tags: [Lifecycle]
+      responses:
+        '200':
+          description: Lifecycle status
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    enum: [idle, pending]
+                  pending_action:
+                    type: string
+                    nullable: true
+                  remaining_seconds:
+                    type: integer
+                    nullable: true
+
+  /lifecycle/shutdown:
+    post:
+      operationId: shutdown
+      summary: Shutdown the VM/container with cancel window
+      tags: [Lifecycle]
+      parameters:
+        - name: delay
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 0
+            maximum: 600
+            default: 0
+      responses:
+        '200':
+          description: Shutdown initiated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    enum: [shutting_down]
+                  delay_seconds:
+                    type: integer
+                  human_present:
+                    type: boolean
+
+  /lifecycle/restart:
+    post:
+      operationId: restart
+      summary: Restart the VM/container with cancel window
+      tags: [Lifecycle]
+      parameters:
+        - name: delay
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 0
+            maximum: 600
+            default: 0
+      responses:
+        '200':
+          description: Restart initiated
+
+  /lifecycle/cancel:
+    post:
+      operationId: cancelLifecycle
+      summary: Cancel a pending shutdown or restart
+      tags: [Lifecycle]
+      responses:
+        '200':
+          description: Cancel result
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    enum: [cancelled, no_pending]
+
+  # ============================================================
+  # Recording
+  # ============================================================
   /recording/start:
     post:
       operationId: startRecording
+      summary: Start session recording
       tags: [Recording]
+      responses:
+        '200':
+          description: Recording started
+
   /recording/stop:
     post:
       operationId: stopRecording
+      summary: Stop session recording
       tags: [Recording]
+      responses:
+        '200':
+          description: Recording stopped
+
   /recording/health:
     get:
       operationId: recordingHealth
+      summary: Recording subsystem health
       tags: [Recording]
+      responses:
+        '200':
+          description: Recording status
+
+  # ============================================================
+  # Input (Canonical paths)
+  # ============================================================
   /input/mouse/click:
     post:
       operationId: mouseClick
+      summary: Click at screen coordinates
       tags: [Input]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [x, y]
+              properties:
+                x:
+                  type: integer
+                y:
+                  type: integer
+                button:
+                  type: string
+                  default: left
+                clicks:
+                  type: integer
+                  default: 1
+      responses:
+        '200':
+          description: Click executed
+
+  /input/mouse/move:
+    post:
+      operationId: mouseMove
+      summary: Move mouse to coordinates (WinBot extension)
+      tags: [Input]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [x, y]
+              properties:
+                x:
+                  type: integer
+                y:
+                  type: integer
+      responses:
+        '200':
+          description: Move executed
+
   /input/key:
     post:
       operationId: keyboardInput
+      summary: Type text or send key combination
       tags: [Input]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [keys]
+              properties:
+                keys:
+                  type: string
+      responses:
+        '200':
+          description: Key input sent
+
+  # ============================================================
+  # Automation
+  # ============================================================
   /apps/run:
     post:
       operationId: runApp
+      summary: Launch a Windows application
       tags: [Automation]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [path]
+              properties:
+                path:
+                  type: string
+                args:
+                  type: string
+                detach:
+                  type: boolean
+      responses:
+        '200':
+          description: App launch result
+
   /screenshot:
     get:
       operationId: screenshot
+      summary: Capture desktop screenshot
       tags: [Automation]
+      responses:
+        '200':
+          description: Screenshot image (PNG/JPG)
+          content:
+            image/png:
+              schema:
+                type: string
+                format: binary
+
   /windows:
     get:
       operationId: listWindows
+      summary: List visible windows
       tags: [Automation]
+      responses:
+        '200':
+          description: Window list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  count:
+                    type: integer
+                  windows:
+                    type: array
+                    items:
+                      type: object
+
+  /windows/focus:
+    post:
+      operationId: focusWindow
+      summary: Focus a window by title
+      tags: [Automation]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                title:
+                  type: string
+                substring:
+                  type: boolean
+      responses:
+        '200':
+          description: Focus result
+
+  # ============================================================
+  # Input Tracing
+  # ============================================================
   /input/trace/start:
     post:
       operationId: startTrace
+      summary: Start input tracing
       tags: [Trace]
+      responses:
+        '200':
+          description: Tracing started
+
   /input/trace/stop:
     post:
       operationId: stopTrace
+      summary: Stop input tracing
       tags: [Trace]
+      responses:
+        '200':
+          description: Tracing stopped
+
   /input/trace/status:
     get:
       operationId: traceStatus
+      summary: Current tracing state
       tags: [Trace]
+      responses:
+        '200':
+          description: Trace status
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  tracing:
+                    type: boolean
+                  event_count:
+                    type: integer
+
   /input/events:
     get:
       operationId: queryEvents
+      summary: Query traced input events
       tags: [Trace]
+      responses:
+        '200':
+          description: Event list
+
+  # ============================================================
+  # Idempotency / Operations
+  # ============================================================
   /operations:
     get:
       operationId: listOperations
+      summary: List recent operations
       tags: [Idempotency]
+      responses:
+        '200':
+          description: Operation list
+
   /operations/{operation_id}:
     get:
       operationId: getOperation
+      summary: Get a specific operation by ID
       tags: [Idempotency]
+      parameters:
+        - name: operation_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Operation details
+        '404':
+          description: Operation not found
+
+  # ============================================================
+  # Version
+  # ============================================================
+  /version:
+    get:
+      operationId: getVersion
+      summary: API and platform version info
+      tags: [Version]
+      responses:
+        '200':
+          description: Version info
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  api_version:
+                    type: string
+                  winbot_version:
+                    type: string
+                  os:
+                    type: string
+                  hostname:
+                    type: string
+
+components:
+  schemas:
+    SessionManifest:
+      type: object
+      required: [session_id, start_time_epoch, start_time_iso]
+      properties:
+        session_id:
+          type: string
+        start_time_epoch:
+          type: number
+        start_time_iso:
+          type: string
+          format: date-time
+        hostname:
+          type: string
+
 tags:
   - name: Health
-  - name: Lifecycle
   - name: Sessions
+  - name: Lifecycle
   - name: Recording
   - name: Input
   - name: Automation
   - name: Trace
   - name: Idempotency
+  - name: Version

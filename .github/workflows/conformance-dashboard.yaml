@@ -1,0 +1,83 @@
+# Builds and publishes a conformance history dashboard to GitHub Pages.
+#
+# Runs on:
+#   - Every push to main (rebuilds dashboard from accumulated results)
+#   - Manual trigger to rebuild
+#
+# Dashboard shows pass rate over time for both WineBot and WinBot.
+# Historical results are stored in results/ on the gh-pages branch.
+
+name: Conformance Dashboard
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build-dashboard:
+    name: Build conformance dashboard
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: pip install pyyaml
+
+      - name: Collect historical results from all branches
+        run: |
+          mkdir -p dashboard/results
+          # Fetch results from the gh-pages branch if it exists
+          git fetch origin gh-pages 2>/dev/null || true
+          if git ls-remote --exit-code origin gh-pages 2>/dev/null; then
+            git checkout origin/gh-pages -- results/ 2>/dev/null || true
+            if [ -d results ]; then
+              cp -r results/* dashboard/results/ 2>/dev/null || true
+            fi
+          fi
+          # Note: results from CI runs are stored as artifacts.
+          # This workflow periodically consolidates them.
+          echo "Historical results directory ready"
+
+      - name: Compile conformance history
+        id: compile
+        run: |
+          python3 scripts/compile-results.py \
+            --results-dir dashboard/results \
+            --output dashboard/history.json
+          echo "Compiled conformance history"
+
+      - name: Generate dashboard HTML
+        run: |
+          python3 scripts/generate-dashboard.py \
+            --history dashboard/history.json \
+            --output dashboard/index.html
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: dashboard
+
+  deploy:
+    needs: build-dashboard
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

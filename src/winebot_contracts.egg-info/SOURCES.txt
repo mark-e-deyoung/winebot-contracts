@@ -1,0 +1,8 @@
+README.md
+pyproject.toml
+src/winebot_contracts/__init__.py
+src/winebot_contracts/broker.py
+src/winebot_contracts.egg-info/PKG-INFO
+src/winebot_contracts.egg-info/SOURCES.txt
+src/winebot_contracts.egg-info/dependency_links.txt
+src/winebot_contracts.egg-info/top_level.txt

@@ -1,0 +1,81 @@
+Metadata-Version: 2.4
+Name: winebot-contracts
+Version: 0.1.0
+Summary: Shared control plane, models, and conformance tests for WinBot and WineBot
+Author: Mark E. DeYoung
+License: PolyForm Noncommercial 1.0.0
+Project-URL: Source, https://github.com/SemperSupra/winebot-contracts
+Classifier: Development Status :: 3 - Alpha
+Classifier: Intended Audience :: Developers
+Classifier: Programming Language :: Python :: 3
+Classifier: Programming Language :: Python :: 3.10
+Classifier: Programming Language :: Python :: 3.11
+Requires-Python: >=3.10
+Description-Content-Type: text/markdown
+
+# WineBot Contracts
+
+Shared API specification, CLI contract, and conformance tests ensuring feature parity between:
+
+| Project | Runtime Engine | Repository |
+|:---|:---|:---|
+| **WineBot** | Containerized Wine (Linux/Docker) | [SemperSupra/WineBot](https://github.com/SemperSupra/WineBot) |
+| **WinBot** | Cloned Windows VM (Hyper-V) | [mark-e-deyoung/WinBot](https://github.com/mark-e-deyoung/WinBot) |
+
+Both projects must implement the contracts defined here. The contracts cover API endpoints, CLI commands, idempotency, MCP tools, CV/OCR sidecar, and credential management.
+
+## Structure
+
+```
+api/openapi.yaml              REST API specification
+cli/winebotctl.md             CLI command contract
+cli/idempotency.md            Idempotency contract
+mcp/tools.json                MCP tool definitions for AI agents
+tests/conformance/            pytest-based cross-project conformance tests
+schemas/session.json          Session manifest schema
+docs/architecture.md          Shared architecture principles
+docs/compatibility.md         Backward compatibility rules
+```
+
+## Using This Repo
+
+### Run conformance tests against an implementation
+
+```bash
+# Install test dependencies
+pip install -r tests/conformance/requirements.txt
+
+# Run against WineBot or WinBot
+pytest tests/conformance/ -v \
+  --api-url http://localhost:8000 \
+  --api-token your-token-here
+```
+
+### Validate the OpenAPI spec independently
+
+```bash
+pip install openapi-spec-validator pyyaml
+python -c "
+import yaml, json
+from openapi_spec_validator import validate
+with open('api/openapi.yaml') as f:
+    spec = yaml.safe_load(f)
+validate(spec)
+print('OpenAPI spec is valid')
+"
+```
+
+### As a git submodule (recommended for CI)
+
+```bash
+# In WinBot or WineBot repo:
+git submodule add https://github.com/mark-e-deyoung/winebot-contracts.git contracts
+git submodule update --init
+# Then run:
+cd contracts && pip install -r tests/conformance/requirements.txt
+pytest tests/conformance/ -v --api-url $URL --api-token $TOKEN
+```
+
+## License
+
+MIT

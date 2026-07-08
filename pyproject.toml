@@ -1,0 +1,25 @@
+[build-system]
+requires = ["setuptools>=64", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "winebot-contracts"
+version = "0.1.0"
+description = "Shared control plane, models, and conformance tests for WinBot and WineBot"
+readme = "README.md"
+requires-python = ">=3.10"
+license = {text = "PolyForm Noncommercial 1.0.0"}
+authors = [{name = "Mark E. DeYoung"}]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+]
+
+[project.urls]
+Source = "https://github.com/SemperSupra/winebot-contracts"
+
+[tool.setuptools.packages.find]
+where = ["src"]

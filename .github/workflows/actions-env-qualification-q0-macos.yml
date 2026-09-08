@@ -1,0 +1,86 @@
+name: Actions Environment Qualification Q0 - macOS
+
+on:
+  push:
+    branches:
+      - exp/actions-env-qualification-q0-macos
+
+permissions:
+  contents: read
+
+jobs:
+  host-environment:
+    name: host-${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        runner:
+          - macos-14
+          - macos-15
+          - macos-26
+          - macos-15-intel
+          - macos-26-intel
+          - xcode-27
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 12
+    steps:
+      - name: Probe macOS host environment
+        shell: bash
+        run: |
+          set +e
+          out="$RUNNER_TEMP/actions-env-${{ matrix.runner }}.txt"
+          {
+            echo 'schema=actions-env-q0-v1'
+            echo 'probe_kind=host'
+            echo 'requested_runner=${{ matrix.runner }}'
+            echo "runner_os=${RUNNER_OS:-}"
+            echo "runner_arch=${RUNNER_ARCH:-}"
+            echo "image_os=${ImageOS:-}"
+            echo "image_version=${ImageVersion:-}"
+            echo "workspace=${GITHUB_WORKSPACE:-}"
+            echo "runner_temp=${RUNNER_TEMP:-}"
+            echo "timestamp_utc=$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+            echo '--- os/architecture ---'
+            sw_vers || true
+            uname -a || true
+            arch || true
+            echo '--- hardware/resources ---'
+            system_profiler SPHardwareDataType 2>/dev/null | head -80 || true
+            sysctl -n hw.ncpu 2>/dev/null || true
+            sysctl -n hw.memsize 2>/dev/null || true
+            sysctl kern.hv_support 2>/dev/null || true
+            echo '--- privilege/storage ---'
+            id || true
+            command -v sudo || true
+            sudo -n true >/dev/null 2>&1; echo "sudo_passwordless=$?"
+            df -h || true
+            echo '--- Apple developer surfaces ---'
+            xcode-select -p 2>/dev/null || true
+            xcodebuild -version 2>/dev/null || true
+            xcrun --find clang 2>/dev/null || true
+            clang --version 2>/dev/null | head -3 || true
+            swift --version 2>/dev/null | head -3 || true
+            xcrun simctl list devices available 2>/dev/null | head -60 || true
+            echo '--- tool surfaces ---'
+            for t in bash zsh pwsh python python3 node npm git gh java javac dotnet go rustc cargo cmake ninja make ruby brew docker podman; do
+              printf '%s=' "$t"
+              command -v "$t" 2>/dev/null || true
+              "$t" --version 2>/dev/null | head -2 || true
+            done
+            docker info 2>/dev/null | head -80 || true
+            echo '--- network ---'
+            dscacheutil -q host -a name github.com 2>/dev/null | head -12 || true
+            if command -v curl >/dev/null 2>&1; then
+              printf 'github_api_http='
+              curl -L -sS -o /dev/null -w '%{http_code}\n' https://api.github.com/ || true
+            fi
+          } >"$out" 2>&1
+          cat "$out"
+      - name: Upload probe report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: actions-env-${{ matrix.runner }}
+          path: ${{ runner.temp }}/actions-env-${{ matrix.runner }}.txt
+          if-no-files-found: warn
+          retention-days: 7

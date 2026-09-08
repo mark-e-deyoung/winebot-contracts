@@ -1,0 +1,85 @@
+name: Actions environment qualification Q0.1 - macOS
+
+on:
+  push:
+    branches:
+      - exp/actions-env-q01-macos-20260908
+
+permissions:
+  contents: read
+
+jobs:
+  macos:
+    strategy:
+      fail-fast: false
+      matrix:
+        runner: [macos-15, macos-15-intel]
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - name: Common deterministic workload
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p q01
+          printf 'alpha\nbeta\ngamma\n' > q01/input.txt
+          python3 - <<'PY'
+          from pathlib import Path
+          import hashlib,json,platform
+          d=Path('q01/input.txt').read_bytes()
+          Path('q01/common.json').write_text(json.dumps({"sha256":hashlib.sha256(d).hexdigest(),"lines":len(d.splitlines()),"machine":platform.machine(),"platform":platform.platform()},sort_keys=True)+"\n")
+          PY
+
+      - name: Qualify simulator as an actuator
+        shell: bash
+        run: |
+          set -u
+          mkdir -p q01
+          xcode-select -p | tee q01/xcode.txt
+          xcodebuild -version | tee -a q01/xcode.txt
+          xcrun simctl list devices available -j > q01/sim-devices.json 2>q01/sim-errors.txt || true
+          udid=$(python3 - <<'PY'
+          import json
+          try:
+              d=json.load(open('q01/sim-devices.json'))
+              for runtime,devs in d.get('devices',{}).items():
+                  for dev in devs:
+                      if dev.get('isAvailable') and dev.get('udid'):
+                          print(dev['udid'])
+                          raise SystemExit
+          except Exception:
+              pass
+          PY
+          )
+          if [ -z "$udid" ]; then
+            echo 'SIMULATOR=NO_AVAILABLE_DEVICE' | tee q01/simulator.txt
+            exit 0
+          fi
+          echo "SIMULATOR_UDID=$udid" | tee q01/simulator.txt
+          xcrun simctl boot "$udid" >>q01/simulator.txt 2>&1 || true
+          if xcrun simctl bootstatus "$udid" -b >>q01/simulator.txt 2>&1; then
+            echo 'SIMULATOR_BOOT=PASS' | tee -a q01/simulator.txt
+            xcrun simctl spawn "$udid" launchctl print system >>q01/simulator-spawn.txt 2>&1 || true
+            if [ -s q01/simulator-spawn.txt ]; then
+              echo 'SIMULATOR_SPAWN=OBSERVED' | tee -a q01/simulator.txt
+            fi
+          else
+            echo 'SIMULATOR_BOOT=FAIL' | tee -a q01/simulator.txt
+          fi
+          xcrun simctl shutdown "$udid" >>q01/simulator.txt 2>&1 || true
+
+      - name: Baseline container and hypervisor signals
+        shell: bash
+        run: |
+          set -u
+          {
+            uname -a
+            sysctl -n machdep.cpu.brand_string 2>/dev/null || true
+            echo "docker=$(command -v docker || true)"
+            echo "podman=$(command -v podman || true)"
+            sysctl kern.hv_support 2>/dev/null || true
+          } | tee q01/platform.txt
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: q01-${{ matrix.runner }}
+          path: q01/

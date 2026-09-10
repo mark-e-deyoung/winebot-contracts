@@ -1,37 +1,7 @@
-"""winebot-contracts — shared control plane, runtime plugins, and conformance tests."""
+"""Portable cross-runtime behavior and conformance contracts for WinBot and WineBot.
 
-from .broker import (
-    AgentStatus,
-    ControlMode,
-    ControlPolicyMode,
-    ControlState,
-    InputBroker,
-    UserIntent,
-    broker,
-)
-from .plugins import (
-    ConnectionInfo,
-    RuntimePlugin,
-    RuntimeState,
-    RuntimeStatus,
-    get_plugin,
-    list_types,
-    register,
-)
+Runtime orchestration, session/input arbitration, deployment, and substrate-specific
+control implementations intentionally live with their owning runtimes/coordinators.
+"""
 
-__all__ = [
-    "AgentStatus",
-    "ConnectionInfo",
-    "ControlMode",
-    "ControlPolicyMode",
-    "ControlState",
-    "InputBroker",
-    "RuntimePlugin",
-    "RuntimeState",
-    "RuntimeStatus",
-    "UserIntent",
-    "broker",
-    "get_plugin",
-    "list_types",
-    "register",
-]
+__all__: list[str] = []

@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "winebot-contracts"
 version = "0.1.0"
-description = "Shared control plane, models, and conformance tests for WinBot and WineBot"
+description = "Portable behavioral contracts and conformance tests for WinBot and WineBot"
 readme = "README.md"
 requires-python = ">=3.10"
 license = {text = "PolyForm Noncommercial 1.0.0"}
@@ -19,7 +19,7 @@ classifiers = [
 ]
 
 [project.urls]
-Source = "https://github.com/SemperSupra/winebot-contracts"
+Source = "https://github.com/mark-e-deyoung/winebot-contracts"
 
 [tool.setuptools.packages.find]
 where = ["src"]

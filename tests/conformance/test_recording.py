@@ -14,6 +14,7 @@ import pytest
 pytestmark = pytest.mark.contract_v1
 
 
+@pytest.mark.vnext_capability_extension_candidate
 class TestRecordingHealth:
     """GET /recording/health — recording subsystem status.
 
@@ -31,6 +32,7 @@ class TestRecordingHealth:
             assert isinstance(data, dict)
 
     @pytest.mark.winbot
+    @pytest.mark.vnext_implementation_specific
     def test_winbot_recording_status_alias(self, api, platform):
         """WinBot should also respond on /recording/status."""
         if platform != "winbot":
@@ -39,6 +41,7 @@ class TestRecordingHealth:
         assert status in (200, 404), f"Expected 200 or 404, got {status}"
 
 
+@pytest.mark.vnext_capability_extension_candidate
 class TestRecordingStartStop:
     """POST /recording/start, POST /recording/stop — control recording."""
 

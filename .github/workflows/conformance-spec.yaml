@@ -35,3 +35,9 @@ jobs:
       - name: Collect conformance suite offline
         run: |
           pytest tests/conformance --collect-only -q
+      - name: Collect provisional vNext classifications offline
+        run: |
+          pytest tests/conformance --collect-only -q -m vnext_portable_core_candidate
+          pytest tests/conformance --collect-only -q -m vnext_capability_extension_candidate
+          pytest tests/conformance --collect-only -q -m vnext_implementation_specific
+          pytest tests/conformance --collect-only -q -m vnext_unresolved

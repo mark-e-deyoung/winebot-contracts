@@ -8,12 +8,14 @@ pytestmark = pytest.mark.contract_v1
 class TestResponseHeaders:
     """Verify response headers conform to the contract."""
 
+    @pytest.mark.vnext_portable_core_candidate
     def test_request_id_header_present(self, api_url, auth_headers):
         """Every response must carry X-Request-ID header."""
         import requests
         resp = requests.get(f"{api_url}/health", headers=auth_headers, timeout=10)
         assert "x-request-id" in resp.headers, "Missing X-Request-ID header"
 
+    @pytest.mark.vnext_unresolved
     def test_request_id_is_uuid_format(self, api_url, auth_headers):
         """X-Request-ID values must be UUID-formatted."""
         import requests
@@ -23,6 +25,7 @@ class TestResponseHeaders:
         assert rid.count("-") == 4
 
     @pytest.mark.winbot
+    @pytest.mark.vnext_implementation_specific
     def test_winbot_version_headers(self, api_url, auth_headers):
         """WinBot sends X-WinBot-Version headers on /health and /version."""
         import requests
@@ -30,6 +33,7 @@ class TestResponseHeaders:
         assert "x-winbot-version" in resp.headers
         assert "x-winbot-api-version" in resp.headers
 
+    @pytest.mark.vnext_portable_core_candidate
     def test_auth_header_accepted(self, api_url, auth_headers):
         """Correct X-API-Key header must be accepted."""
         import requests
@@ -38,6 +42,7 @@ class TestResponseHeaders:
             f"Auth header not accepted: {resp.status_code}"
         )
 
+    @pytest.mark.vnext_implementation_specific
     def test_version_headers_not_on_run_endpoints(self, api_url, auth_headers):
         """Version headers must NOT leak on non-versioned endpoints."""
         import requests

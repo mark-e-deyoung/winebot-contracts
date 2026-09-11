@@ -5,6 +5,7 @@ import pytest
 pytestmark = pytest.mark.contract_v1
 
 
+@pytest.mark.vnext_portable_core_candidate
 class TestLifecycleStatus:
     """GET /lifecycle/status — check for pending lifecycle actions."""
 
@@ -25,6 +26,7 @@ class TestLifecycleStatus:
             assert data["pending_action"] is None
 
 
+@pytest.mark.vnext_capability_extension_candidate
 class TestLifecycleShutdown:
     """POST /lifecycle/shutdown — initiate shutdown with cancel window."""
 
@@ -56,6 +58,7 @@ class TestLifecycleShutdown:
 
 
 @pytest.mark.winbot
+@pytest.mark.vnext_implementation_specific
 class TestLifecycleRestart:
     """POST /lifecycle/restart — WinBot-specific hot-restart behavior."""
 
@@ -70,6 +73,7 @@ class TestLifecycleRestart:
         assert data["delay_seconds"] >= 10
 
 
+@pytest.mark.vnext_capability_extension_candidate
 class TestLifecycleCancel:
     """POST /lifecycle/cancel — cancel pending shutdown/restart."""
 

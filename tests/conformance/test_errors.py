@@ -2,7 +2,10 @@
 
 import pytest
 
-pytestmark = pytest.mark.contract_v1
+pytestmark = [
+    pytest.mark.contract_v1,
+    pytest.mark.vnext_portable_core_candidate,
+]
 
 
 class TestErrorResponses:

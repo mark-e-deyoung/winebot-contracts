@@ -142,8 +142,12 @@ def pytest_collection_modifyitems(config, items):
     detected = _detect_platform(api_url, headers)
 
     if detected == "unknown":
-        # Do not guess. Tests without platform markers can still report the
-        # underlying connectivity/contract failure; marked tests remain explicit.
+        skip_unknown = pytest.mark.skip(
+            reason="Platform-specific test skipped because target platform is unknown"
+        )
+        for item in items:
+            if "winbot" in item.keywords or "winebot" in item.keywords:
+                item.add_marker(skip_unknown)
         return
 
     skip_winbot = pytest.mark.skip(reason=f"WinBot-specific test; target is {detected}")

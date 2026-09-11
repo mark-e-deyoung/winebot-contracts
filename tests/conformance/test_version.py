@@ -25,8 +25,9 @@ class TestVersion:
         assert len(parts) == 3
         assert all(p.isdigit() for p in parts)
 
-    @pytest.mark.vnext_implementation_specific
+    @pytest.mark.vnext_obsolete_contract
     def test_version_has_winbot_version(self, api):
+        """Legacy v1 compatibility field; proposed for retirement from shared vNext semantics."""
         _, data = api("GET", "/version")
         assert "winbot_version" in data
 

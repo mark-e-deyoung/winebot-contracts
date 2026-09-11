@@ -55,8 +55,9 @@ class TestLifecycleShutdown:
         assert status == 422, f"Expected 422 for oversized delay, got {status}"
 
 
+@pytest.mark.winbot
 class TestLifecycleRestart:
-    """POST /lifecycle/restart — initiate restart with cancel window."""
+    """POST /lifecycle/restart — WinBot-specific hot-restart behavior."""
 
     def test_restart_returns_200(self, api):
         status, data = api("POST", "/lifecycle/restart")
@@ -74,7 +75,6 @@ class TestLifecycleCancel:
 
     def test_cancel_without_pending(self, api):
         """Cancel with nothing pending returns no_pending, not an error."""
-        # First clear any pending action
         api("POST", "/lifecycle/cancel")
         status, data = api("POST", "/lifecycle/cancel")
         assert status == 200

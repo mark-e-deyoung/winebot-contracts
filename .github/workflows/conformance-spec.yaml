@@ -23,14 +23,15 @@ jobs:
           pip install openapi-spec-validator pyyaml pytest requests
       - name: Validate OpenAPI spec
         run: |
-          python -c "
-import yaml
-from openapi_spec_validator import validate
-with open('api/openapi.yaml') as f:
-    spec = yaml.safe_load(f)
-validate(spec)
-print('OpenAPI spec is valid')
-"
+          python - <<'PY'
+          import yaml
+          from openapi_spec_validator import validate
+
+          with open('api/openapi.yaml') as f:
+              spec = yaml.safe_load(f)
+          validate(spec)
+          print('OpenAPI spec is valid')
+          PY
       - name: Collect conformance suite offline
         run: |
           pytest tests/conformance --collect-only -q

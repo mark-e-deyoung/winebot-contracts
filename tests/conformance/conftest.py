@@ -39,6 +39,29 @@ def pytest_addoption(parser):
     )
 
 
+def _detect_platform(api_url, auth_headers):
+    """Detect target platform without requiring a pytest fixture."""
+    try:
+        r = requests.get(f"{api_url}/version", headers=auth_headers, timeout=5)
+        if r.status_code == 200:
+            data = r.json()
+            if data.get("os", "").lower() == "windows":
+                return "winbot"
+            return "winebot"
+    except Exception:
+        pass
+    try:
+        r = requests.get(f"{api_url}/health", headers=auth_headers, timeout=5)
+        if r.status_code == 200:
+            data = r.json()
+            if "x11" in str(data).lower() or "wine" in str(data).lower():
+                return "winebot"
+            return "winbot"
+    except Exception:
+        pass
+    return "unknown"
+
+
 @pytest.fixture(scope="session")
 def api_url(request):
     """Base URL of the target API."""
@@ -71,25 +94,7 @@ def session(api_url, auth_headers):
 @pytest.fixture(scope="session")
 def platform(api_url, auth_headers):
     """Detect platform: 'winbot' or 'winebot'. Cached for the session."""
-    try:
-        r = requests.get(f"{api_url}/version", headers=auth_headers, timeout=5)
-        if r.status_code == 200:
-            data = r.json()
-            if data.get("os", "").lower() == "windows":
-                return "winbot"
-            return "winebot"
-    except Exception:
-        pass
-    try:
-        r = requests.get(f"{api_url}/health", headers=auth_headers, timeout=5)
-        if r.status_code == 200:
-            data = r.json()
-            if "x11" in str(data).lower() or "wine" in str(data).lower():
-                return "winebot"
-            return "winbot"
-    except Exception:
-        pass
-    return "unknown"
+    return _detect_platform(api_url, auth_headers)
 
 
 @pytest.fixture(scope="session")
@@ -123,9 +128,36 @@ def pytest_configure(config):
 
 
 def pytest_collection_modifyitems(config, items):
-    """Apply platform-specific skipping."""
-    if not any("--api-url" in arg for arg in config.invocation_params.args):
+    """Skip platform-specific tests that do not apply to the detected target."""
+    explicit_target = (
+        any("--api-url" in arg for arg in config.invocation_params.args)
+        or bool(os.environ.get("API_URL"))
+    )
+    if not explicit_target:
         return
+
+    api_url = config.getoption("--api-url").rstrip("/")
+    token = config.getoption("--api-token")
+    headers = {"X-API-Key": token} if token else {}
+    detected = _detect_platform(api_url, headers)
+
+    if detected == "unknown":
+        skip_unknown = pytest.mark.skip(
+            reason="Platform-specific test skipped because target platform is unknown"
+        )
+        for item in items:
+            if "winbot" in item.keywords or "winebot" in item.keywords:
+                item.add_marker(skip_unknown)
+        return
+
+    skip_winbot = pytest.mark.skip(reason=f"WinBot-specific test; target is {detected}")
+    skip_winebot = pytest.mark.skip(reason=f"WineBot-specific test; target is {detected}")
+
+    for item in items:
+        if "winbot" in item.keywords and detected != "winbot":
+            item.add_marker(skip_winbot)
+        if "winebot" in item.keywords and detected != "winebot":
+            item.add_marker(skip_winebot)
 
 
 # ============================================================
@@ -138,7 +170,6 @@ def pytest_sessionfinish(session, exitstatus):
     if not results_path:
         return
 
-    # Parse test outcomes from the terminalreporter's stats
     reporter = session.config.pluginmanager.get_plugin("terminalreporter")
     if not reporter:
         return
@@ -153,7 +184,6 @@ def pytest_sessionfinish(session, exitstatus):
 
     total = passed + failed + skipped + xfailed + xpassed + errors
 
-    # Collect failure details
     failures = []
     for test in stats.get("failed", []):
         failures.append({
@@ -161,7 +191,6 @@ def pytest_sessionfinish(session, exitstatus):
             "message": str(test.longrepr) if test.longrepr else "unknown",
         })
 
-    # Detect git info
     git_sha = ""
     git_branch = ""
     try:
@@ -176,7 +205,6 @@ def pytest_sessionfinish(session, exitstatus):
     except Exception:
         pass
 
-    # Detect platform version from API
     api_version = ""
     platform_name = ""
     try:

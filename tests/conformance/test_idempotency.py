@@ -7,7 +7,10 @@ Canonical paths:
 
 import pytest
 
-pytestmark = pytest.mark.contract_v1
+pytestmark = [
+    pytest.mark.contract_v1,
+    pytest.mark.vnext_unresolved,
+]
 
 
 class TestOperationsList:

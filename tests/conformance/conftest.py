@@ -129,6 +129,13 @@ def pytest_configure(config):
 
 def pytest_collection_modifyitems(config, items):
     """Skip platform-specific tests that do not apply to the detected target."""
+    explicit_target = (
+        any("--api-url" in arg for arg in config.invocation_params.args)
+        or bool(os.environ.get("API_URL"))
+    )
+    if not explicit_target:
+        return
+
     api_url = config.getoption("--api-url").rstrip("/")
     token = config.getoption("--api-token")
     headers = {"X-API-Key": token} if token else {}

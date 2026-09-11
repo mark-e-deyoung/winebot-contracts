@@ -37,19 +37,15 @@ class TestKeyboardInput:
     """
 
     @pytest.mark.winbot
-    def test_canonical_path_on_winbot(self, api, platform):
+    def test_canonical_path_on_winbot(self, api):
         """WinBot should alias /input/key to its keyboard implementation."""
-        if platform != "winbot":
-            pytest.skip("WinBot-specific")
         status, data = api("POST", "/input/key", json={"keys": "test"})
         assert status not in (404,), f"Canonical path /input/key returned 404 on WinBot"
         assert status in (200, 400, 422, 500)
 
     @pytest.mark.winebot
-    def test_canonical_path_on_winebot(self, api, platform):
+    def test_canonical_path_on_winebot(self, api):
         """WineBot should respond to /input/key natively."""
-        if platform != "winebot":
-            pytest.skip("WineBot-specific")
         status, data = api("POST", "/input/key", json={"keys": "test"})
         assert status in (200, 400, 422, 500)
 
@@ -57,6 +53,7 @@ class TestKeyboardInput:
 class TestMouseMove:
     """POST /input/mouse/move — WinBot-specific; may not exist on WineBot."""
 
+    @pytest.mark.winbot
     def test_mouse_move_rejects_empty_body(self, api):
         status, data = api("POST", "/input/mouse/move", json={})
         assert status == 422, f"Expected 422 for empty move, got {status}"

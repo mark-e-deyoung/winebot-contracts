@@ -15,6 +15,7 @@ import pytest
 pytestmark = pytest.mark.contract_v1
 
 
+@pytest.mark.vnext_capability_extension_candidate
 class TestTraceStatus:
     """GET /input/trace/status — current tracing state."""
 
@@ -28,6 +29,7 @@ class TestTraceStatus:
         assert isinstance(data["tracing"], bool)
 
 
+@pytest.mark.vnext_capability_extension_candidate
 class TestTraceEvents:
     """GET /input/events — query traced input events.
 
@@ -40,6 +42,7 @@ class TestTraceEvents:
         assert status == 200
 
     @pytest.mark.winbot
+    @pytest.mark.vnext_implementation_specific
     def test_winbot_events_alias(self, api, platform):
         """WinBot should also respond on /input/trace/events."""
         if platform != "winbot":
@@ -48,6 +51,7 @@ class TestTraceEvents:
         assert status == 200
 
 
+@pytest.mark.vnext_capability_extension_candidate
 class TestTraceStartStop:
     """POST /input/trace/start, POST /input/trace/stop."""
 

@@ -15,6 +15,7 @@ import pytest
 pytestmark = pytest.mark.contract_v1
 
 
+@pytest.mark.vnext_capability_extension_candidate
 class TestMouseClick:
     """POST /input/mouse/click — click at screen coordinates."""
 
@@ -29,6 +30,7 @@ class TestMouseClick:
         assert status == 422, f"Expected 422 for missing coordinates, got {status}"
 
 
+@pytest.mark.vnext_capability_extension_candidate
 class TestKeyboardInput:
     """POST /input/key — type text or key combinations.
 
@@ -50,6 +52,7 @@ class TestKeyboardInput:
         assert status in (200, 400, 422, 500)
 
 
+@pytest.mark.vnext_implementation_specific
 class TestMouseMove:
     """POST /input/mouse/move — WinBot-specific; may not exist on WineBot."""
 

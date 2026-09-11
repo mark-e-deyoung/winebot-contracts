@@ -15,10 +15,12 @@ pytestmark = pytest.mark.contract_v1
 class TestScreenshot:
     """GET /screenshot — capture desktop screenshot."""
 
+    @pytest.mark.vnext_capability_extension_candidate
     def test_screenshot_returns_200_or_acceptable(self, api):
         status, data = api("GET", "/screenshot")
         assert status in (200, 400, 409, 429, 503), f"Unexpected status: {status}"
 
+    @pytest.mark.vnext_unresolved
     def test_screenshot_is_image_when_successful(self, api, api_url, session):
         """When screenshot succeeds, response must be an image."""
         resp = session.get(f"{api_url}/screenshot", timeout=10)
@@ -32,6 +34,7 @@ class TestScreenshot:
             )
 
 
+@pytest.mark.vnext_capability_extension_candidate
 class TestWindows:
     """GET /windows — list visible windows."""
 
@@ -50,6 +53,7 @@ class TestWindows:
         assert isinstance(data["windows"], list)
 
 
+@pytest.mark.vnext_capability_extension_candidate
 class TestWindowFocus:
     """POST /windows/focus — focus a window by title."""
 
@@ -66,6 +70,7 @@ class TestWindowFocus:
         assert status == 200
 
 
+@pytest.mark.vnext_capability_extension_candidate
 class TestInspectWindow:
     """POST /inspect/window — inspect window details."""
 
@@ -75,6 +80,7 @@ class TestInspectWindow:
         assert "status" in data
 
 
+@pytest.mark.vnext_capability_extension_candidate
 class TestAppRun:
     """POST /apps/run — launch a Windows application."""
 

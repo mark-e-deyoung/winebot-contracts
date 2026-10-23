@@ -1,0 +1,22 @@
+name: Public Windows UI visibility baseline (not WinBot)
+on:
+  pull_request:
+    paths:
+      - .github/workflows/windows-gui-audience-probe.yml
+      - tools/windows_gui_audience_probe.ps1
+
+permissions:
+  contents: read
+
+jobs:
+  disposable-windows-apps:
+    runs-on: windows-2025
+    timeout-minutes: 9
+    steps:
+      - name: Fetch public probe only
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8
+        with:
+          persist-credentials: false
+      - name: Launch stock Windows apps and classify UI visibility
+        shell: powershell
+        run: .\tools\windows_gui_audience_probe.ps1

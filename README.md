@@ -36,6 +36,22 @@ Classify shared behavior as one of:
 
 A missing substrate capability should be explicit and machine-readable rather than synthesized solely for parity. Backward-compatible migration should precede retirement of existing consumer-visible behavior.
 
+## Conformance dashboard publication
+
+`.github/workflows/conformance-dashboard.yaml` always builds the static dashboard as a
+GitHub Actions Pages artifact. **Publication is an independent, opt-in repository gate**:
+enable GitHub Pages with the **GitHub Actions** source in repository Settings → Pages,
+then set the repository Actions variable `WINEBOT_CONTRACTS_PAGES_ENABLED=true`.
+Without that variable, the deploy job is intentionally skipped rather than failing
+with the Pages API's HTTP 404. If publication is opted in and deployment fails,
+the workflow remains red; do not hide that failure.
+
+Dashboard build success does not establish conformance success or the presence of
+historical results. The current builder reads `results/` from `gh-pages` only when
+available; artifact ingestion/provenance remains separately qualified. Do not turn
+on publication to obtain a green status or treat a missing destination as a test
+failure.
+
 ## Using This Repo
 
 ### Run conformance tests against an implementation

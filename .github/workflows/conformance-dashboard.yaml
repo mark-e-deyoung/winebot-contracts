@@ -73,6 +73,9 @@ jobs:
 
   deploy:
     needs: build-dashboard
+    # Deploying to Pages requires separately enabled repository Pages settings.
+    # Leave builds useful without pretending an unavailable destination is healthy.
+    if: ${{ vars.WINEBOT_CONTRACTS_PAGES_ENABLED == 'true' }}
     runs-on: ubuntu-latest
     environment:
       name: github-pages

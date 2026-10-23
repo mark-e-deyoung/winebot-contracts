@@ -6,6 +6,7 @@ on:
       - tools/windows_gui_audience_probe.ps1
       - tools/windows_notepad_window_capture.ps1
       - tools/windows_paint_window_capture.ps1
+      - tools/windows_uia_semantic_probe.ps1
 
 permissions:
   contents: read
@@ -22,6 +23,9 @@ jobs:
       - name: Launch stock Windows apps and classify UI visibility
         shell: powershell
         run: .\tools\windows_gui_audience_probe.ps1
+      - name: Inspect bounded semantic UI Automation patterns
+        shell: powershell
+        run: .\tools\windows_uia_semantic_probe.ps1
       - name: Capture only a verified blank Notepad window with synthetic text
         shell: powershell
         run: .\tools\windows_notepad_window_capture.ps1

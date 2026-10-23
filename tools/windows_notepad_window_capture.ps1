@@ -16,6 +16,7 @@ public static class WinBotReferenceWin32 {
   [DllImport("user32.dll")] public static extern bool ShowWindow(IntPtr h, int mode);
   [DllImport("user32.dll")] public static extern bool SetForegroundWindow(IntPtr h);
   [DllImport("user32.dll")] public static extern IntPtr GetForegroundWindow();
+  [DllImport("user32.dll")] public static extern bool PrintWindow(IntPtr h, IntPtr hdc, uint flags);
 }
 '@
 $PIDSession = [System.Diagnostics.Process]::GetCurrentProcess().SessionId
@@ -79,7 +80,19 @@ try {
     $bitmap = New-Object System.Drawing.Bitmap($width, $height)
     $graphics = [System.Drawing.Graphics]::FromImage($bitmap)
     try {
-        $graphics.CopyFromScreen($left, $top, 0, 0, $bitmap.Size)
+        # PrintWindow renders only the verified HWND, never the background desktop.
+        # CopyFromScreen of a decorated window rectangle leaked runner-console edge pixels.
+        $hdc = $graphics.GetHdc()
+        try {
+            $printed = [WinBotReferenceWin32]::PrintWindow($hwnd, $hdc, 2)
+            if (-not $printed) { $printed = [WinBotReferenceWin32]::PrintWindow($hwnd, $hdc, 0) }
+        } finally {
+            $graphics.ReleaseHdc($hdc)
+        }
+        if (-not $printed) {
+            Write-Output 'REFERENCE_NOTEPAD_VISUAL=PRINTWINDOW_UNAVAILABLE'
+            return
+        }
         $colors = New-Object 'System.Collections.Generic.HashSet[int]'
         for($x=0; $x -lt $width; $x += [Math]::Max([int]($width/20),1)) {
             for($y=0; $y -lt $height; $y += [Math]::Max([int]($height/20),1)) {
@@ -95,7 +108,7 @@ try {
         Write-Output 'REFERENCE_NOTEPAD_VISUAL=WINDOW_ONLY_CAPTURED'
         Write-Output 'REFERENCE_NOTEPAD_SYNTHETIC=true'
         Write-Output ('REFERENCE_WINDOW_SIZE_CLASS=' + $(if($width -gt 800){'large'}else{'compact'}))
-        Write-Output 'NO_DESKTOP_OR_TASKBAR_CAPTURE=true'
+        Write-Output 'PRINTWINDOW_HWND_ONLY=true'
     } finally {
         $graphics.Dispose()
         $bitmap.Dispose()

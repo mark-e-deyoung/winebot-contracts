@@ -5,6 +5,7 @@ on:
       - .github/workflows/windows-gui-audience-probe.yml
       - tools/windows_gui_audience_probe.ps1
       - tools/windows_notepad_window_capture.ps1
+      - tools/windows_paint_window_capture.ps1
 
 permissions:
   contents: read
@@ -24,10 +25,13 @@ jobs:
       - name: Capture only a verified blank Notepad window with synthetic text
         shell: powershell
         run: .\tools\windows_notepad_window_capture.ps1
+      - name: Capture verified blank Paint window when available
+        shell: powershell
+        run: .\tools\windows_paint_window_capture.ps1
       - name: Publish only verified window crop if produced
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
         with:
-          name: public-win32-notepad-window-only
-          path: safe-native-reference/notepad-window.png
+          name: public-win32-stock-app-windows-only
+          path: safe-native-reference/*.png
           if-no-files-found: ignore
           retention-days: 1

@@ -11,7 +11,7 @@ This repository is a **thin cross-runtime conformance authority**, not a shared 
 
 Do not add fleet orchestration, package/distribution ownership, shared session arbitration, generalized runtime lifecycle management, or implementation-specific compatibility shims here merely to make WinBot and WineBot look identical. Runtime-local mechanics remain with the runtime that owns them unless repeated cross-runtime evidence earns a smaller shared contract.
 
-Legacy shared control-plane implementations currently present under `src/winebot_contracts/` are migration/retirement candidates tracked in issue #11. They should not gain new consumers while that cleanup is qualified.
+Historical shared `InputBroker` and `RuntimePlugin` implementations were removed from active package source by merged [PR #13](https://github.com/mark-e-deyoung/winebot-contracts/pull/13). The decision was recorded in historical issue #11, but repository Issues are currently disabled (the issue endpoint returns 410). Treat that issue as background, not an executable current backlog; future changes must be governed through the owning runtime's authoritative DLE.
 
 ## Structure
 
@@ -68,7 +68,7 @@ CI consumers may check out this repository at an immutable revision and run the 
 
 ## Current migration authority
 
-Issue #11 is the durable authority for narrowing the historical broad-parity model. Preserve portable schemas, consumer-visible semantics, idempotency, errors/results, capability discovery, and conformance evidence. Freeze new consumers of the generalized `InputBroker` and `RuntimePlugin` implementations while retirement/migration is completed.
+The historical broad-parity retirement was implemented by merged [PR #13](https://github.com/mark-e-deyoung/winebot-contracts/pull/13); issue #11 is inaccessible while Issues are disabled. On current `main`, `src/winebot_contracts/` retains its thin package surface rather than the retired `broker.py` and `plugins.py`. Continue preserving portable schemas, consumer-visible semantics, idempotency, errors/results, capability discovery, and conformance evidence. Route new runtime or control-plane proposals to the actual owning WineBot/WinBot DLE and require an independently qualified consumer need; do not resurrect shared orchestration for cosmetic parity.
 
 ## License
 

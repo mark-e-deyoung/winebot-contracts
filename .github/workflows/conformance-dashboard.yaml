@@ -73,6 +73,8 @@ jobs:
 
   deploy:
     needs: build-dashboard
+    # Build and staging remain independent; publishing is explicit owner opt-in.
+    if: ${{ vars.WINEBOT_CONTRACTS_PAGES_ENABLED == 'true' }}
     runs-on: ubuntu-latest
     environment:
       name: github-pages
